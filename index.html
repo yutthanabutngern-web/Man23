@@ -45,6 +45,12 @@ td,th{padding:6px 4px;text-align:left;border-bottom:1px dashed #c98b3a}
 th{color:#8a4b08}
 tr.me{background:#ffe680;font-weight:800}
 #muteBtn{position:fixed;top:10px;right:10px;z-index:100;width:48px;height:48px;font-size:1.5rem;border:3px solid #8a4b08;border-radius:50%;background:#fff8e6;cursor:pointer;box-shadow:0 3px 0 #6b3a06}
+#camModal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:12px}
+#camModal.hidden{display:none}
+.camBox{width:100%;max-width:460px;text-align:center}
+#camVideo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:18px;border:4px solid #ffd21f;background:#000}
+.camBtns{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:8px;margin:12px 0 8px}
+.camBtns .btn{padding:10px 4px;font-size:1rem}
 .hidden{display:none}
 .final{text-align:center;font-size:1.6rem;font-weight:800}
 .final b{color:#e53935;font-size:2.6rem}
@@ -54,6 +60,17 @@ tr.me{background:#ffe680;font-weight:800}
 <body>
 <div id="cursor">🔨</div>
 <button id="muteBtn" title="เปิด/ปิดเสียง">🔊</button>
+<div id="camModal" class="hidden">
+  <div class="camBox">
+    <video id="camVideo" playsinline muted></video>
+    <div class="camBtns">
+      <button class="btn" id="camShot" style="margin:0">📸 ถ่ายรูป</button>
+      <button class="btn alt" id="camFlip" style="margin:0">🔄 สลับกล้อง</button>
+      <button class="btn alt" id="camCancel" style="margin:0;background:#757575;border-color:#424242;box-shadow:0 5px 0 #424242">ยกเลิก</button>
+    </div>
+    <div class="note" style="color:#ddd">จัดหน้าให้อยู่กลางภาพ แล้วกดถ่ายรูป</div>
+  </div>
+</div>
 <div class="wrap">
   <h1>🔨 ตีตัวตุ่น</h1>
 
@@ -70,11 +87,13 @@ tr.me{background:#ffe680;font-weight:800}
       <div class="faceRow">
         <div class="facePrev" id="facePrev">🐹</div>
         <div style="flex:1">
-          <button class="btn alt" style="margin:0" onclick="document.getElementById('file').click()">📷 อัปโหลดรูปหน้าตุ่น</button>
+          <button class="btn alt" style="margin:0 0 8px" onclick="document.getElementById('file').click()">📁 เลือกรูปจากเครื่อง/แกลเลอรี</button>
+          <button class="btn alt" style="margin:0;background:#43a047;border-color:#1b5e20;box-shadow:0 5px 0 #1b5e20" id="camBtn">📸 ถ่ายรูปด้วยกล้อง</button>
           <input type="file" id="file" accept="image/*" class="hidden">
+          <input type="file" id="fileCam" accept="image/*" capture="user" class="hidden">
         </div>
       </div>
-      <div class="note">หรือวางไฟล์ mole.png ไว้โฟลเดอร์เดียวกับเกม</div>
+      <div class="note">หรือวางไฟล์ mole.png ไว้โฟลเดอร์เดียวกับเกม<br>(กล้องสดใช้ได้เมื่อเปิดผ่าน localhost หรือ https ถ้าไม่ได้ ระบบจะเปิดกล้องของมือถือให้แทน)</div>
     </div>
     <button class="btn" id="startBtn">▶ เริ่มเกม (16 วินาที)</button>
     <div class="card"><b>🏆 อันดับสูงสุด</b><div id="lb0"></div></div>
@@ -127,23 +146,47 @@ if(!faceSrc){ // ลองโหลด mole.png จากโฟลเดอร�
   const t = new Image(); t.onload = ()=>{faceSrc='mole.png';updateFacePrev();}; t.src='mole.png';
 }
 updateFacePrev();
-$('file').onchange = e=>{
-  const f = e.target.files[0]; if(!f) return;
+// ตัดเป็นจัตุรัสและย่อให้เล็กลงเพื่อเก็บในเครื่อง (topBias: 0=ชิดบน, .5=กึ่งกลาง)
+function setFaceFromImage(img, topBias){
+  const w = img.videoWidth || img.naturalWidth || img.width;
+  const h = img.videoHeight || img.naturalHeight || img.height;
+  const s = Math.min(w,h), c = document.createElement('canvas');
+  c.width = c.height = 300;
+  c.getContext('2d').drawImage(img,(w-s)/2,(h-s)*topBias,s,s,0,0,300,300);
+  faceSrc = c.toDataURL('image/jpeg',.85);
+  try{localStorage.setItem('wam_face',faceSrc);}catch(_){}
+  updateFacePrev();
+}
+function loadFile(f){
+  if(!f) return;
   const r = new FileReader();
-  r.onload = ()=>{
-    const img = new Image();
-    img.onload = ()=>{ // ย่อรูปให้เล็กลงเพื่อเก็บในเครื่อง
-      const s = Math.min(img.width,img.height), c = document.createElement('canvas');
-      c.width = c.height = 300;
-      c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/4,s,s,0,0,300,300);
-      faceSrc = c.toDataURL('image/jpeg',.85);
-      try{localStorage.setItem('wam_face',faceSrc);}catch(_){}
-      updateFacePrev();
-    };
-    img.src = r.result;
-  };
+  r.onload = ()=>{ const img = new Image(); img.onload = ()=>setFaceFromImage(img,.25); img.src = r.result; };
   r.readAsDataURL(f);
+}
+$('file').onchange    = e=>{ loadFile(e.target.files[0]); e.target.value=''; };
+$('fileCam').onchange = e=>{ loadFile(e.target.files[0]); e.target.value=''; };
+
+// กล้องสด (ต้องเป็น localhost/https) ถ้าไม่ได้ให้ใช้กล้องของมือถือผ่านช่องเลือกไฟล์แทน
+let camStream = null, camFacing = 'user';
+async function startCam(){
+  stopCam();
+  camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:camFacing,width:{ideal:1280},height:{ideal:960}},audio:false});
+  const v = $('camVideo'); v.srcObject = camStream; await v.play();
+  v.style.transform = camFacing==='user' ? 'scaleX(-1)' : 'none'; // พรีวิวแบบกระจก
+}
+function stopCam(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } }
+function closeCam(){ stopCam(); $('camModal').classList.add('hidden'); }
+$('camBtn').onclick = async ()=>{
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.isSecureContext){ $('fileCam').click(); return; }
+  try{ await startCam(); $('camModal').classList.remove('hidden'); }
+  catch(_){ stopCam(); $('fileCam').click(); }
 };
+$('camShot').onclick = ()=>{ const v=$('camVideo'); if(!v.videoWidth) return; setFaceFromImage(v,.5); closeCam(); };
+$('camFlip').onclick = async ()=>{
+  camFacing = camFacing==='user' ? 'environment' : 'user';
+  try{ await startCam(); }catch(_){ camFacing = 'user'; try{ await startCam(); }catch(__){} }
+};
+$('camCancel').onclick = closeCam;
 
 // ---------- เสียง ----------
 // เสียงทั้งหมดสร้างสดด้วย Web Audio (ไม่ต้องมีไฟล์เสียง)
