@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>ตีตัวตุ่น</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{margin:0;font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif;background:linear-gradient(#7ec8ff,#b9e8ff 40%,#7ed957 40%,#4caf3a);min-height:100vh;color:#3b2a14}
+.wrap{max-width:560px;margin:0 auto;padding:12px}
+h1{margin:6px 0;text-align:center;font-size:2.2rem;color:#ffd21f;-webkit-text-stroke:2px #8a4b08;text-shadow:0 4px 0 #8a4b08;letter-spacing:1px}
+.card{background:#fff8e6;border:4px solid #8a4b08;border-radius:18px;padding:14px;margin:10px 0;box-shadow:0 6px 0 #6b3a06}
+label{font-weight:700;display:block;margin:6px 0 4px}
+input[type=text]{width:100%;padding:10px;font-size:1.1rem;border:3px solid #c98b3a;border-radius:10px;font-family:inherit}
+.chars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.chars button{font-size:1.8rem;padding:6px 0;border:3px solid #c98b3a;border-radius:12px;background:#fff;cursor:pointer}
+.chars button.sel{background:#ffd21f;border-color:#8a4b08;transform:scale(1.08)}
+.btn{display:block;width:100%;padding:12px;font-size:1.3rem;font-weight:800;font-family:inherit;color:#fff;background:#e53935;border:4px solid #8a1b18;border-radius:14px;cursor:pointer;box-shadow:0 5px 0 #8a1b18;margin-top:10px}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #8a1b18}
+.btn.alt{background:#1e88e5;border-color:#0d47a1;box-shadow:0 5px 0 #0d47a1;font-size:1rem}
+.faceRow{display:flex;align-items:center;gap:12px}
+.facePrev{width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid #8a4b08;background:#eee;font-size:2.4rem;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.facePrev img{width:100%;height:100%;object-fit:cover}
+.hud{display:flex;gap:10px;margin-bottom:8px}
+.hud div{flex:1;background:#222;border:4px solid #8a4b08;border-radius:12px;text-align:center;padding:4px;color:#ffd21f;font-weight:700}
+.hud span{display:block;font-family:"Courier New",monospace;font-size:2rem;color:#ff3b30;text-shadow:0 0 8px #f00}
+.who{text-align:center;font-weight:800;margin-bottom:4px}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px;background:radial-gradient(#5fd13f,#3c9a2a);border:4px solid #2b6e1e;border-radius:18px;cursor:none;touch-action:manipulation}
+.hole{position:relative;aspect-ratio:1/0.9;overflow:hidden;border-radius:0 0 50% 50%/0 0 30% 30%}
+.dirt{position:absolute;left:5%;right:5%;bottom:0;height:34%;background:radial-gradient(#3b2209,#6b4423);border-radius:50%;border:4px solid #8a5a2b}
+.mole{position:absolute;left:12%;right:12%;bottom:-6%;top:8%;transform:translateY(100%);transition:transform .12s ease-out;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.mole.up{transform:translateY(8%)}
+.mole.hit{transform:translateY(30%) rotate(-8deg);filter:brightness(1.4) saturate(.6)}
+.body{position:relative;width:88%;aspect-ratio:1;border-radius:50% 50% 38% 38%;background:#7a4a24;display:flex;align-items:flex-start;justify-content:center;overflow:visible}
+.face{position:absolute;top:14%;width:70%;aspect-ratio:1;border-radius:50%;object-fit:cover;background:#f2c9a0;display:flex;align-items:center;justify-content:center;font-size:2.4rem;overflow:hidden}
+.face img{width:100%;height:100%;object-fit:cover}
+.helmet{position:absolute;top:2%;width:68%;height:30%;background:#ffd21f;border:3px solid #b88a00;border-radius:50% 50% 8% 8%;z-index:2}
+.helmet::after{content:"";position:absolute;left:50%;top:18%;width:22%;height:42%;transform:translateX(-50%);background:#fff;border-radius:50%;box-shadow:0 0 8px #fff}
+.star{position:absolute;font-size:2rem;z-index:5;pointer-events:none;animation:pop .6s forwards;font-weight:800;color:#fff;-webkit-text-stroke:2px #e53935}
+@keyframes pop{from{transform:translateY(0) scale(.6);opacity:1}to{transform:translateY(-50px) scale(1.4);opacity:0}}
+#cursor{position:fixed;left:0;top:0;font-size:3.2rem;pointer-events:none;z-index:99;transform:translate(-30%,-70%) rotate(-30deg);transition:transform .06s;display:none}
+#cursor.swing{transform:translate(-30%,-70%) rotate(35deg)}
+table{width:100%;border-collapse:collapse}
+td,th{padding:6px 4px;text-align:left;border-bottom:1px dashed #c98b3a}
+th{color:#8a4b08}
+tr.me{background:#ffe680;font-weight:800}
+#muteBtn{position:fixed;top:10px;right:10px;z-index:100;width:48px;height:48px;font-size:1.5rem;border:3px solid #8a4b08;border-radius:50%;background:#fff8e6;cursor:pointer;box-shadow:0 3px 0 #6b3a06}
+.hidden{display:none}
+.final{text-align:center;font-size:1.6rem;font-weight:800}
+.final b{color:#e53935;font-size:2.6rem}
+.note{font-size:.8rem;color:#7a6a50;text-align:center}
+</style>
+</head>
+<body>
+<div id="cursor">🔨</div>
+<button id="muteBtn" title="เปิด/ปิดเสียง">🔊</button>
+<div class="wrap">
+  <h1>🔨 ตีตัวตุ่น</h1>
+
+  <!-- หน้าตั้งค่า -->
+  <div id="setup">
+    <div class="card">
+      <label for="name">ชื่อตัวละครของคุณ</label>
+      <input id="name" type="text" maxlength="12" placeholder="ใส่ชื่อ (ไม่เกิน 12 ตัวอักษร)">
+      <label>เลือกตัวละคร (อาวุธ/ผู้เล่น)</label>
+      <div class="chars" id="chars"></div>
+    </div>
+    <div class="card">
+      <label>หน้าตัวตุ่น</label>
+      <div class="faceRow">
+        <div class="facePrev" id="facePrev">🐹</div>
+        <div style="flex:1">
+          <button class="btn alt" style="margin:0" onclick="document.getElementById('file').click()">📷 อัปโหลดรูปหน้าตุ่น</button>
+          <input type="file" id="file" accept="image/*" class="hidden">
+        </div>
+      </div>
+      <div class="note">หรือวางไฟล์ mole.png ไว้โฟลเดอร์เดียวกับเกม</div>
+    </div>
+    <button class="btn" id="startBtn">▶ เริ่มเกม (16 วินาที)</button>
+    <div class="card"><b>🏆 อันดับสูงสุด</b><div id="lb0"></div></div>
+  </div>
+
+  <!-- หน้าเล่น -->
+  <div id="play" class="hidden">
+    <div class="who" id="who"></div>
+    <div class="hud"><div>SCORE<span id="score">0</span></div><div>TIME<span id="time">16</span></div></div>
+    <div class="board" id="board"></div>
+    <div class="note" style="margin-top:8px">ตีให้ไว! ยิ่งตีต่อเนื่อง ยิ่งได้คะแนนคอมโบ</div>
+  </div>
+
+  <!-- หน้าสรุปผล -->
+  <div id="result" class="hidden">
+    <div class="card">
+      <div class="final">หมดเวลา! คะแนนของ <span id="rName"></span><br><b id="rScore">0</b></div>
+      <div id="rRank" style="text-align:center;font-weight:700"></div>
+    </div>
+    <div class="card"><b>🏆 อันดับสูงสุด</b><div id="lb1"></div></div>
+    <button class="btn" id="againBtn">🔁 เล่นอีกครั้ง</button>
+    <button class="btn alt" id="menuBtn">กลับหน้าแรก</button>
+  </div>
+</div>
+
+<script>
+const GAME_SEC = 16, HOLES = 9;
+const CHARS = ['🔨','🏏','🥊','🪓','🧹','🍳'];
+const $ = id => document.getElementById(id);
+let charIdx = +localStorage.getItem('wam_char') || 0;
+let faceSrc = localStorage.getItem('wam_face') || '';
+$('name').value = localStorage.getItem('wam_name') || '';
+
+// ---------- ตัวละคร ----------
+function renderChars(){
+  $('chars').innerHTML = '';
+  CHARS.forEach((c,i)=>{
+    const b = document.createElement('button');
+    b.textContent = c; b.className = i===charIdx?'sel':'';
+    b.onclick = ()=>{charIdx=i;localStorage.setItem('wam_char',i);renderChars();};
+    $('chars').appendChild(b);
+  });
+}
+renderChars();
+
+// ---------- หน้าตัวตุ่น ----------
+function faceHTML(){ return faceSrc ? `<img src="${faceSrc}" alt="">` : '🐹'; }
+function updateFacePrev(){ $('facePrev').innerHTML = faceHTML(); }
+if(!faceSrc){ // ลองโหลด mole.png จากโฟลเดอร์เดียวกัน
+  const t = new Image(); t.onload = ()=>{faceSrc='mole.png';updateFacePrev();}; t.src='mole.png';
+}
+updateFacePrev();
+$('file').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{ // ย่อรูปให้เล็กลงเพื่อเก็บในเครื่อง
+      const s = Math.min(img.width,img.height), c = document.createElement('canvas');
+      c.width = c.height = 300;
+      c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/4,s,s,0,0,300,300);
+      faceSrc = c.toDataURL('image/jpeg',.85);
+      try{localStorage.setItem('wam_face',faceSrc);}catch(_){}
+      updateFacePrev();
+    };
+    img.src = r.result;
+  };
+  r.readAsDataURL(f);
+};
+
+// ---------- เสียง ----------
+// เสียงทั้งหมดสร้างสดด้วย Web Audio (ไม่ต้องมีไฟล์เสียง)
+let ac, master, musicGain, sfxGain, noiseBuf, musicTimer = null;
+let muted = localStorage.getItem('wam_mute') === '1';
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function audio(){
+  if(!ac){
+    try{
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ac.destination);
+      musicGain = ac.createGain(); musicGain.gain.value = .28; musicGain.connect(master);
+      sfxGain = ac.createGain(); sfxGain.gain.value = 1; sfxGain.connect(master);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    }catch(_){ ac = null; }
+  }
+  if(ac && ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function tone(f, t, dur, type, vol, dest, f2){
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + .02);
+}
+function noise(t, dur, vol, dest, filterType, freq){
+  const s = ac.createBufferSource(); s.buffer = noiseBuf;
+  const f = ac.createBiquadFilter(); f.type = filterType; f.frequency.value = freq;
+  const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random()*.5); s.stop(t + dur + .02);
+}
+
+const sfx = {
+  hit(combo){ // เสียง "บอนก์!" ตอนทุบโดน + เสียงร้อง + ปิ๊งตามคอมโบ
+    if(!audio()) return; const t = ac.currentTime;
+    noise(t, .09, .9, sfxGain, 'lowpass', 900);
+    tone(240, t, .16, 'sine', .9, sfxGain, 55);
+    tone(520 + Math.random()*120, t + .02, .14, 'square', .12, sfxGain, 200);
+    tone(mtof(72 + Math.min(combo, 12)), t + .05, .18, 'triangle', .25, sfxGain);
+  },
+  swing(){ // เสียงฟาดอากาศ
+    if(!audio()) return; const t = ac.currentTime;
+    noise(t, .08, .18, sfxGain, 'highpass', 2500);
+  },
+  start(){
+    if(!audio()) return; const t = ac.currentTime;
+    [72,76,79,84].forEach((m,i)=>tone(mtof(m), t+i*.08, .16, 'square', .16, sfxGain));
+  },
+  tick(){ if(!audio()) return; tone(1000, ac.currentTime, .07, 'square', .14, sfxGain); },
+  end(){
+    if(!audio()) return; const t = ac.currentTime;
+    [79,76,72,67].forEach((m,i)=>tone(mtof(m), t+i*.16, .3, 'triangle', .3, sfxGain));
+    tone(mtof(48), t+.64, .7, 'sawtooth', .18, sfxGain);
+  }
+};
+
+// เพลงประกอบ 8-bit วนซ้ำ เร็วขึ้นเรื่อยๆ ตามเวลาที่เหลือ
+const MEL  = [76,79,76,72,74,77,74,71,72,76,79,84,83,79,76,null,
+              77,81,77,74,76,79,76,72,74,77,79,83,84,null,79,null];
+const BASS = [48,43,41,43];            // C G F G (เปลี่ยนทุก 8 สเต็ป)
+let mStep = 0, mNext = 0;
+function scheduleStep(t, s){
+  const m = MEL[s % 32];
+  const dur = 60 / tempo() / 2;
+  if(m) tone(mtof(m), t, dur*.9, 'square', .16, musicGain);
+  const root = BASS[Math.floor(s / 8) % 4];
+  tone(mtof(root + (s % 2 ? 12 : 0)), t, dur*.8, 'triangle', .32, musicGain);
+  if(s % 4 === 0) tone(150, t, .12, 'sine', .55, musicGain, 45);          // กลองใหญ่
+  if(s % 4 === 2) noise(t, .09, .22, musicGain, 'highpass', 1800);        // แสนร์
+  if(s % 2 === 1) noise(t, .03, .08, musicGain, 'highpass', 6000);        // ไฮแฮต
+}
+function tempo(){ return 150 + (typeof timeLeft === 'number' ? (1 - timeLeft / GAME_SEC) * 50 : 0); }
+function startMusic(){
+  if(!audio()) return; stopMusic();
+  mStep = 0; mNext = ac.currentTime + .1;
+  musicTimer = setInterval(()=>{
+    while(mNext < ac.currentTime + .15){
+      scheduleStep(mNext, mStep++);
+      mNext += 60 / tempo() / 2;
+    }
+  }, 30);
+}
+function stopMusic(){ if(musicTimer){ clearInterval(musicTimer); musicTimer = null; } }
+
+// ปุ่มเปิด/ปิดเสียง
+function paintMute(){ $('muteBtn').textContent = muted ? '🔇' : '🔊'; }
+$('muteBtn').onclick = ()=>{
+  muted = !muted; localStorage.setItem('wam_mute', muted ? '1' : '0');
+  if(audio()) master.gain.setTargetAtTime(muted ? 0 : 1, ac.currentTime, .02);
+  paintMute();
+};
+paintMute();
+
+// ---------- อันดับ ----------
+async function loadScores(){
+  try{
+    const r = await fetch('/api/scores',{cache:'no-store'});
+    if(!r.ok) throw 0; const j = await r.json();
+    if(!Array.isArray(j)) throw 0; return j;
+  }catch(_){ return JSON.parse(localStorage.getItem('wam_scores')||'[]'); }
+}
+async function saveScore(entry){
+  try{
+    const r = await fetch('/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
+    if(!r.ok) throw 0; return await r.json();
+  }catch(_){
+    const all = JSON.parse(localStorage.getItem('wam_scores')||'[]');
+    all.push(entry); all.sort((a,b)=>b.score-a.score);
+    const top = all.slice(0,50); localStorage.setItem('wam_scores',JSON.stringify(top)); return top;
+  }
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderBoard(el,list,meTs){
+  const top = list.slice(0,10);
+  if(!top.length){ el.innerHTML='<div class="note">ยังไม่มีใครเล่น เป็นคนแรกเลย!</div>'; return; }
+  const medal=['🥇','🥈','🥉'];
+  el.innerHTML = '<table><tr><th>#</th><th>ผู้เล่น</th><th>คะแนน</th></tr>'+
+    top.map((e,i)=>`<tr class="${e.ts===meTs?'me':''}"><td>${medal[i]||i+1}</td><td>${esc(e.char||'')} ${esc(e.name)}</td><td>${e.score}</td></tr>`).join('')+'</table>';
+}
+async function showHome(){ renderBoard($('lb0'),await loadScores()); }
+
+// ---------- เกม ----------
+let score,timeLeft,combo,timers=[],running=false,holes=[];
+function buildBoard(){
+  const b=$('board'); b.innerHTML=''; holes=[];
+  for(let i=0;i<HOLES;i++){
+    const h=document.createElement('div'); h.className='hole';
+    h.innerHTML=`<div class="dirt"></div><div class="mole"><div class="body"><div class="face">${faceHTML()}</div><div class="helmet"></div></div></div>`;
+    const m=h.querySelector('.mole');
+    const hit=e=>{ e.preventDefault(); whack(m,e); };
+    m.addEventListener('pointerdown',hit);
+    b.appendChild(h); holes.push(m);
+  }
+}
+function whack(m,e){
+  if(!running||!m.classList.contains('up')||m.classList.contains('hit')) return;
+  combo++; const pts = 10 + Math.min(combo-1,10)*2;
+  score += pts; $('score').textContent = score;
+  m.classList.add('hit'); sfx.hit(combo);
+  const s=document.createElement('div'); s.className='star'; s.textContent='+'+pts;
+  const r=m.parentElement.getBoundingClientRect(),br=$('board').getBoundingClientRect();
+  s.style.left=(r.left-br.left+r.width/2-20)+'px'; s.style.top=(r.top-br.top+10)+'px';
+  s.style.position='absolute'; $('board').style.position='relative'; $('board').appendChild(s);
+  setTimeout(()=>s.remove(),600);
+  setTimeout(()=>{m.classList.remove('up','hit');},180);
+}
+function popUp(){
+  if(!running) return;
+  const free = holes.filter(m=>!m.classList.contains('up'));
+  if(free.length){
+    const m = free[Math.floor(Math.random()*free.length)];
+    m.classList.add('up');
+    const progress = 1-timeLeft/GAME_SEC;
+    const stay = 900 - progress*450 + Math.random()*250;
+    timers.push(setTimeout(()=>{ if(m.classList.contains('up')&&!m.classList.contains('hit')){combo=0;} m.classList.remove('up'); },stay));
+  }
+  const next = 650 - (1-timeLeft/GAME_SEC)*380 + Math.random()*180;
+  timers.push(setTimeout(popUp,next));
+}
+function startGame(){
+  const name = $('name').value.trim() || 'ผู้เล่น';
+  localStorage.setItem('wam_name',name);
+  $('who').textContent = CHARS[charIdx]+' '+name;
+  $('cursor').textContent = CHARS[charIdx];
+  buildBoard(); score=0; combo=0; timeLeft=GAME_SEC;
+  $('score').textContent=0; $('time').textContent=GAME_SEC;
+  show('play'); running=true; $('cursor').style.display='block';
+  sfx.start(); startMusic(); popUp();
+  const t0=Date.now(); let lastSec=GAME_SEC;
+  const tick=setInterval(()=>{
+    timeLeft = Math.max(0, GAME_SEC-(Date.now()-t0)/1000);
+    const sec = Math.ceil(timeLeft);
+    $('time').textContent = sec;
+    if(sec !== lastSec){ lastSec = sec; if(sec <= 3 && sec > 0) sfx.tick(); }
+    if(timeLeft<=0){ clearInterval(tick); endGame(name); }
+  },100);
+  timers.push(tick);
+}
+async function endGame(name){
+  running=false; timers.forEach(t=>{clearTimeout(t);clearInterval(t);}); timers=[];
+  $('cursor').style.display='none'; stopMusic(); sfx.end();
+  const entry={name,char:CHARS[charIdx],score,ts:Date.now()};
+  $('rName').textContent=name; $('rScore').textContent=score; show('result');
+  const list = await saveScore(entry);
+  const sorted = [...list].sort((a,b)=>b.score-a.score);
+  const rank = sorted.findIndex(e=>e.ts===entry.ts)+1;
+  $('rRank').textContent = rank ? `คุณได้อันดับที่ ${rank} จาก ${sorted.length} ครั้ง` : '';
+  renderBoard($('lb1'),sorted,entry.ts);
+}
+function show(id){ ['setup','play','result'].forEach(x=>$(x).classList.toggle('hidden',x!==id)); }
+
+// ตัวชี้ (ค้อน) ตามเมาส์
+document.addEventListener('pointermove',e=>{ const c=$('cursor'); c.style.left=e.clientX+'px'; c.style.top=e.clientY+'px'; });
+document.addEventListener('pointerdown',e=>{ if(!running) return; const c=$('cursor'); c.style.left=e.clientX+'px'; c.style.top=e.clientY+'px'; c.classList.add('swing'); sfx.swing(); setTimeout(()=>c.classList.remove('swing'),90); });
+
+$('startBtn').onclick=startGame;
+$('againBtn').onclick=startGame;
+$('menuBtn').onclick=()=>{show('setup');showHome();};
+showHome();
+</script>
+</body>
+</html>
